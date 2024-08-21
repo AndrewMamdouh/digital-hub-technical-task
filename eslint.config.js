@@ -1,28 +1,56 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
+import jsEslint from '@eslint/js';
+import globals from 'globals';
+import tsEslint from 'typescript-eslint';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import importX from 'eslint-plugin-import-x';
+import unusedImports from 'eslint-plugin-unused-imports';
+import prettier from 'eslint-plugin-prettier/recommended';
 
-export default tseslint.config(
-  { ignores: ['dist'] },
-  {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ['**/*.{ts,tsx}'],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-    },
-    plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
-    },
-    rules: {
-      ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
-    },
-  },
-)
+export default tsEslint.config(
+    { ignores: ['node_modules', 'dist', 'public'] },
+    {
+        extends: [
+            jsEslint.configs.recommended,
+            ...tsEslint.configs.recommended,
+            importX.configs.typescript,
+            prettier,
+        ],
+        files: ['**/*.{ts,tsx}'],
+        languageOptions: {
+            ecmaVersion: 2020,
+            globals: globals.browser,
+        },
+        plugins: {
+            'simple-import-sort': simpleImportSort,
+            'import-x': importX,
+            'unused-imports': unusedImports,
+        },
+        rules: {
+            'no-unused-vars': 'off',
+            'simple-import-sort/exports': 'error',
+            'import-x/first': 'error',
+            'import-x/newline-after-import': 'error',
+            'import-x/no-duplicates': 'error',
+            'import-x/order': [
+                'error',
+                {
+                    groups: [
+                        'external',
+                        'internal',
+                        'parent',
+                        'sibling',
+                        'index',
+                    ],
+                    'newlines-between': 'always',
+                    pathGroups: [
+                        {
+                            pattern: '^@(/|[A-Z]).*',
+                            group: 'internal',
+                        },
+                    ],
+                },
+            ],
+            'unused-imports/no-unused-imports': 'error',
+        },
+    }
+);
