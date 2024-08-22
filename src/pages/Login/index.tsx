@@ -4,7 +4,7 @@ import { Button } from '@UI';
 
 const Login = () => {
     return (
-        <div className="relative flex grow flex-col items-center justify-center gap-y-24">
+        <div className="relative flex grow flex-col items-center justify-center gap-y-24 px-6">
             <span className="bg-pattern absolute inset-0 -z-10" />
             <div>
                 <h1 className="text-center font-heading text-4xl font-bold leading-[3rem] text-black sm:text-5xl sm:leading-[4rem] md:text-6xl md:leading-[5rem] xl:text-8xl xl:leading-[7rem]">

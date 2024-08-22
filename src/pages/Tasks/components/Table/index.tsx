@@ -114,13 +114,16 @@ const TaskActionBody = (data: Task, { props }: ColumnBodyOptions) => {
 };
 
 const Table = ({ tasks, onEdit, onRemove }: TableProps) => (
-    <div className="inline-block min-w-full overflow-hidden rounded-lg align-middle">
+    <div className="inline-block w-full rounded-lg align-middle">
         <DataTable
             value={tasks}
             rows={8}
-            tableClassName="min-w-full max-w-max"
+            tableClassName="min-w-full scrollbar-thin"
             filterDisplay="row"
             emptyMessage="No tasks found."
+            pt={{
+                wrapper: { className: /*tw*/ 'scrollbar-thin' },
+            }}
             removableSort
             paginator
         >
@@ -136,7 +139,7 @@ const Table = ({ tasks, onEdit, onRemove }: TableProps) => (
             <Column
                 field="description"
                 header="Description"
-                headerClassName="text-sm font-bold whitespace-nowrap"
+                headerClassName="text-sm font-bold whitespace-nowrap min-w-80"
                 bodyClassName="text-secondary text-sm font-normal"
                 sortable
                 filter

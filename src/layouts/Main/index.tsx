@@ -28,7 +28,7 @@ const Main = ({ children }: MainProps) => (
                 <UserButton />
             </nav>
         </header>
-        <div className="absolute inset-0 mt-[4.25rem] overflow-auto px-5 pt-8 scrollbar-thin lg:px-6">
+        <div className="absolute inset-0 mt-[4.25rem] overflow-y-auto overflow-x-hidden px-5 pt-8 scrollbar-thin lg:px-6">
             {children}
         </div>
     </>
