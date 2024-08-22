@@ -13,9 +13,9 @@ import randomTasks from './mockData';
 
 const Tasks = () => {
     const { userId } = useAuth();
-    const [tasks, setTasks] = useLocalStorage<Record<string, Task[]> | Task[]>(
+    const [tasks, setTasks] = useLocalStorage<Record<string, Task[]>>(
         'digital-hub-tasks',
-        randomTasks
+        {}
     );
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -28,17 +28,12 @@ const Tasks = () => {
                 localStorage.getItem('digital-hub-tasks') ?? '{}'
             );
             if (!localStorageTasks[userId])
-                localStorage.setItem(
-                    'digital-hub-tasks',
-                    JSON.stringify({
-                        ...localStorageTasks,
-                        [userId]: randomTasks,
-                    })
-                );
+                setTasks({
+                    ...localStorageTasks,
+                    [userId]: randomTasks,
+                });
         }
-    }, [userId]);
-
-    if (!userId) return <ProgressSpinner />;
+    }, [setTasks, userId]);
 
     const onEdit = useCallback((task: Task) => {
         setSelectedTask(task);
@@ -50,47 +45,50 @@ const Tasks = () => {
         setShowRemoveModal(true);
     }, []);
 
-    const taskAddHandler = (task: Task) => {
-        setTasks((prevTasks) =>
-            Array.isArray(prevTasks)
-                ? [task, ...prevTasks]
-                : {
-                      ...prevTasks,
-                      [userId]: [task, ...prevTasks[userId]],
-                  }
-        );
-        setShowAddModal(false);
-    };
+    const taskAddHandler = useCallback(
+        (task: Task) => {
+            if (userId) {
+                setTasks((prevTasks) => ({
+                    ...prevTasks,
+                    [userId]: [task, ...prevTasks[userId]],
+                }));
+            }
+            setShowAddModal(false);
+        },
+        [setTasks, userId]
+    );
 
-    const taskEditHandler = (task: Task) => {
-        setTasks((prevTasks) =>
-            Array.isArray(prevTasks)
-                ? prevTasks.map((prevTask) =>
-                      prevTask.id === task.id ? task : prevTask
-                  )
-                : {
-                      ...prevTasks,
-                      [userId]: prevTasks[userId].map((prevTask) =>
-                          prevTask.id === task.id ? task : prevTask
-                      ),
-                  }
-        );
-        setShowEditModal(false);
-    };
+    const taskEditHandler = useCallback(
+        (task: Task) => {
+            if (userId) {
+                setTasks((prevTasks) => ({
+                    ...prevTasks,
+                    [userId]: prevTasks[userId].map((prevTask) =>
+                        prevTask.id === task.id ? task : prevTask
+                    ),
+                }));
+            }
+            setShowEditModal(false);
+        },
+        [setTasks, userId]
+    );
 
-    const taskRemoveHandler = (task: Task) => {
-        setTasks((prevTasks) =>
-            Array.isArray(prevTasks)
-                ? prevTasks.filter(({ id }) => id !== task.id)
-                : {
-                      ...prevTasks,
-                      [userId]: prevTasks[userId].filter(
-                          ({ id }) => id !== task.id
-                      ),
-                  }
-        );
-        setShowRemoveModal(false);
-    };
+    const taskRemoveHandler = useCallback(
+        (task: Task) => {
+            if (userId) {
+                setTasks((prevTasks) => ({
+                    ...prevTasks,
+                    [userId]: prevTasks[userId].filter(
+                        ({ id }) => id !== task.id
+                    ),
+                }));
+            }
+            setShowRemoveModal(false);
+        },
+        [setTasks, userId]
+    );
+
+    if (!userId || !tasks[userId]) return <ProgressSpinner />;
 
     return (
         <MainLayout>
@@ -120,11 +118,7 @@ const Tasks = () => {
                     <DotsThreeVertical size="1.5rem" weight="bold" />
                 </Button>
             </div>
-            <Table
-                tasks={Array.isArray(tasks) ? tasks : tasks[userId]}
-                onEdit={onEdit}
-                onRemove={onRemove}
-            />
+            <Table tasks={tasks[userId]} onEdit={onEdit} onRemove={onRemove} />
             <Dialog
                 type="add"
                 showModal={showAddModal}

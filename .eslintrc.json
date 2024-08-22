@@ -1,11 +1,13 @@
 {
   "root": true,
   "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:tailwindcss/recommended", "plugin:prettier/recommended"],
-  "plugins": ["@typescript-eslint", "simple-import-sort", "import", "unused-imports"],
+  "plugins": ["@typescript-eslint", "react-hooks",  "simple-import-sort", "import", "unused-imports"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "sourceType": "module",
-    "ecmaVersion": "latest"
+    "ecmaVersion": "latest",
+    "jsx": true,
+    "useJSXTextNode": true
   },
   "settings": {
     "import/parsers": {
@@ -24,6 +26,8 @@
   "rules": {
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "error",
     "unused-imports/no-unused-imports": "error",
     "simple-import-sort/exports": "error",
     "import/first": "error",
