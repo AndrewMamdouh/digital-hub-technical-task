@@ -1,4 +1,5 @@
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
+
 import { LoginPage, TasksPage } from '@Pages';
 
 export default function App() {

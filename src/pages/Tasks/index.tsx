@@ -1,11 +1,3 @@
-import { useLocalStorage } from 'usehooks-ts';
-import { DataTable } from 'primereact/datatable';
-import { Column, ColumnFilterElementTemplateOptions } from 'primereact/column';
-import { Formik, Form, ErrorMessage } from 'formik';
-import { MainLayout } from '@Layouts';
-import { Button, InputText, InputTextarea } from '@UI';
-import { Badge } from 'primereact/badge';
-import { Dropdown } from 'primereact/dropdown';
 import {
     DotsThree,
     Trash,
@@ -14,19 +6,27 @@ import {
     DotsThreeVertical,
     Plus,
 } from '@phosphor-icons/react';
+import { Formik, Form, ErrorMessage } from 'formik';
+import { Badge } from 'primereact/badge';
+import { Column, ColumnFilterElementTemplateOptions } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
+import { Dropdown } from 'primereact/dropdown';
 import { useEffect, useState } from 'react';
+import { useLocalStorage } from 'usehooks-ts';
 import { v4 as uuidv4 } from 'uuid';
+
+import { Button, InputText, InputTextarea } from '@UI';
 import { Task } from '@Types';
-
-import validationSchema from './data';
-import randomTasks from './mock';
-
+import { MainLayout } from '@Layouts';
 import {
     getBaseClassNames,
     getSizeClassNames,
     getVariantClassNames,
 } from '@/UI/Button/utils';
+
+import randomTasks from './mock';
+import validationSchema from './data';
 
 const TaskStatusTag = ({ status }: { status: Task['status'] }) => (
     <Badge
@@ -45,11 +45,54 @@ const TaskStatusFilter = (options: ColumnFilterElementTemplateOptions) => {
     return (
         <Dropdown
             value={options.value}
-            options={['Not Started', 'In Progress', 'Finished']}
             onChange={(e) => options.filterApplyCallback(e.value)}
-            itemTemplate={(option) => <TaskStatusTag status={option} />}
-            placeholder="Select Status"
+            // itemTemplate={(option) => <TaskStatusTag status={option} />}
+            options={taskStatuses}
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Choose status"
+            pt={{
+                root: {
+                    className:
+                        /*tw*/ 'hover:border-secondary focus:border-secondary focus:ring-2 focus:ring-secondary/40 shadow-none items-center w-40',
+                },
+                input: {
+                    className: /*tw*/ 'py-1.5 px-2 text-sm text-secondary',
+                },
+                trigger: {
+                    className: /*tw*/ 'text-secondary-light w-auto py-1.5 px-2',
+                },
+                item: {
+                    className:
+                        /*tw*/ 'text-secondary aria-selected:bg-primary-light p-2',
+                },
+                list: {
+                    className: /*tw*/ 'py-2',
+                },
+                clearIcon: {
+                    className: /*tw*/ 'static m-0 py-1.5 h-8',
+                },
+            }}
             showClear
+        />
+    );
+};
+
+const TaskDescriptionFilter = (options: ColumnFilterElementTemplateOptions) => {
+    return (
+        <InputText
+            value={options.value}
+            onChange={(e) => options.filterApplyCallback(e.target.value)}
+            placeholder="Search for description..."
+        />
+    );
+};
+const TaskNameFilter = (options: ColumnFilterElementTemplateOptions) => {
+    return (
+        <InputText
+            value={options.value}
+            onChange={(e) => options.filterApplyCallback(e.target.value)}
+            placeholder="Search for name..."
         />
     );
 };
@@ -185,6 +228,7 @@ const Tasks = () => {
                         bodyClassName="text-secondary text-sm font-normal whitespace-nowrap"
                         sortable
                         filter
+                        filterElement={TaskNameFilter}
                     />
                     <Column
                         field="description"
@@ -193,6 +237,7 @@ const Tasks = () => {
                         bodyClassName="text-secondary text-sm font-normal"
                         sortable
                         filter
+                        filterElement={TaskDescriptionFilter}
                     />
                     <Column
                         field="status"

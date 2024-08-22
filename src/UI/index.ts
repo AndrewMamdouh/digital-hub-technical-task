@@ -1,6 +1,6 @@
 import Button from './Button';
 import InputText from './InputText';
-import Message from './Message';
 import InputTextarea from './InputTextarea';
+import Message from './Message';
 
 export { Button, InputText, InputTextarea, Message };

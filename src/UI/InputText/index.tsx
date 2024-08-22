@@ -5,9 +5,8 @@ import {
 import { ChangeEventHandler, forwardRef, Ref } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { FormikProps } from '../common';
-
 import { getSizeClassNames, getThemeClassNames } from './utils';
+import { FormikProps } from '../common';
 
 export type InputTextProps = Omit<PrimeInputTextProps, 'children' | 'type'> &
     FormikProps & {

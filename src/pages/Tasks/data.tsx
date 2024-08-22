@@ -1,4 +1,5 @@
 import { object, string, mixed } from 'yup';
+
 import { Message } from '@UI';
 
 const validationSchema = object().shape({

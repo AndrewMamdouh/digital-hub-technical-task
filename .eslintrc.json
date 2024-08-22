@@ -1,0 +1,43 @@
+{
+  "root": true,
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:tailwindcss/recommended", "plugin:prettier/recommended"],
+  "plugins": ["@typescript-eslint", "simple-import-sort", "import", "unused-imports"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": "latest"
+  },
+  "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": "./tsconfig.app.json"
+      },
+      "node": {
+        "project": "./tsconfig.node.json"
+      }
+    } 
+  },
+  "rules": {
+    "no-unused-vars": "error",
+    "unused-imports/no-unused-imports": "error",
+    "simple-import-sort/exports": "error",
+    "import/first": "error",
+    "import/no-unresolved": "error",
+    "import/newline-after-import": "error",
+    "import/no-duplicates": "error",
+    "import/order": ["error", {
+      "groups": ["builtin", "external", "internal", ["parent", "sibling", "index"]],
+      "newlines-between": "always",
+      "pathGroups": [
+        {
+          "pattern": "^@(\/|[A-Z]).*",
+          "group": "internal"
+        }
+      ]
+    }]
+  }
+}

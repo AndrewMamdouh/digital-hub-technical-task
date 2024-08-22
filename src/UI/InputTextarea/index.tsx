@@ -5,13 +5,12 @@ import {
 import { ChangeEventHandler, forwardRef, Ref } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { FormikProps } from '../common';
-
 import {
     getResizeClassNames,
     getSizeClassNames,
     getThemeClassNames,
 } from './utils';
+import { FormikProps } from '../common';
 
 export type InputTextareaProps = PrimeInputTextareaProps &
     FormikProps & {

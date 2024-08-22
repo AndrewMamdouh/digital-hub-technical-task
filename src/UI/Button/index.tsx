@@ -2,10 +2,10 @@ import {
     Button as PrimeButton,
     ButtonProps as PrimeButtonProps,
 } from 'primereact/button';
+import { Menu, MenuProps } from 'primereact/menu';
 import { MenuItem } from 'primereact/menuitem';
 import { forwardRef, MouseEventHandler, Ref, useId, useRef } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { Menu, MenuProps } from 'primereact/menu';
 
 import {
     getBaseClassNames,

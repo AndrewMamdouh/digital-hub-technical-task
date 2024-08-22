@@ -1,6 +1,7 @@
-import { Task } from '@Types';
 import { faker } from '@faker-js/faker';
 import { v4 as uuidv4 } from 'uuid';
+
+import { Task } from '@Types';
 
 const createRandomTask = (): Task => ({
     id: uuidv4(),
