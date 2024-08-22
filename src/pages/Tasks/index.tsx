@@ -1,186 +1,94 @@
-import {
-    DotsThree,
-    Trash,
-    Pen,
-    X,
-    DotsThreeVertical,
-    Plus,
-} from '@phosphor-icons/react';
-import { Formik, Form, ErrorMessage } from 'formik';
-import { Badge } from 'primereact/badge';
-import { Column, ColumnFilterElementTemplateOptions } from 'primereact/column';
-import { DataTable } from 'primereact/datatable';
-import { Dialog } from 'primereact/dialog';
-import { Dropdown } from 'primereact/dropdown';
-import { useEffect, useState } from 'react';
+import { DotsThreeVertical, Plus } from '@phosphor-icons/react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
-import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '@clerk/clerk-react';
+import { ProgressSpinner } from 'primereact/progressspinner';
 
-import { Button, InputText, InputTextarea } from '@UI';
+import { Button } from '@UI';
 import { Task } from '@Types';
 import { MainLayout } from '@Layouts';
-import {
-    getBaseClassNames,
-    getSizeClassNames,
-    getVariantClassNames,
-} from '@/UI/Button/utils';
 
-import randomTasks from './mock';
-import validationSchema from './data';
-
-const TaskStatusTag = ({ status }: { status: Task['status'] }) => (
-    <Badge
-        severity={
-            status === 'In Progress'
-                ? 'info'
-                : status === 'Not Started'
-                  ? 'danger'
-                  : 'success'
-        }
-        value={status}
-    />
-);
-
-const TaskStatusFilter = (options: ColumnFilterElementTemplateOptions) => {
-    return (
-        <Dropdown
-            value={options.value}
-            onChange={(e) => options.filterApplyCallback(e.value)}
-            // itemTemplate={(option) => <TaskStatusTag status={option} />}
-            options={taskStatuses}
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Choose status"
-            pt={{
-                root: {
-                    className:
-                        /*tw*/ 'hover:border-secondary focus:border-secondary focus:ring-2 focus:ring-secondary/40 shadow-none items-center w-40',
-                },
-                input: {
-                    className: /*tw*/ 'py-1.5 px-2 text-sm text-secondary',
-                },
-                trigger: {
-                    className: /*tw*/ 'text-secondary-light w-auto py-1.5 px-2',
-                },
-                item: {
-                    className:
-                        /*tw*/ 'text-secondary aria-selected:bg-primary-light p-2',
-                },
-                list: {
-                    className: /*tw*/ 'py-2',
-                },
-                clearIcon: {
-                    className: /*tw*/ 'static m-0 py-1.5 h-8',
-                },
-            }}
-            showClear
-        />
-    );
-};
-
-const TaskDescriptionFilter = (options: ColumnFilterElementTemplateOptions) => {
-    return (
-        <InputText
-            value={options.value}
-            onChange={(e) => options.filterApplyCallback(e.target.value)}
-            placeholder="Search for description..."
-        />
-    );
-};
-const TaskNameFilter = (options: ColumnFilterElementTemplateOptions) => {
-    return (
-        <InputText
-            value={options.value}
-            onChange={(e) => options.filterApplyCallback(e.target.value)}
-            placeholder="Search for name..."
-        />
-    );
-};
-
-const taskStatuses = [
-    { label: 'Not Started', value: 'Not Started' },
-    { label: 'In Progress', value: 'In Progress' },
-    { label: 'Finished', value: 'Finished' },
-];
+import { Table, Dialog } from './components';
+import randomTasks from './mockData';
 
 const Tasks = () => {
-    const [tasks, setTasks] = useLocalStorage('digital-hub-tasks', randomTasks);
+    const { userId } = useAuth();
+    const [tasks, setTasks] = useLocalStorage<Record<string, Task[]> | Task[]>(
+        'digital-hub-tasks',
+        randomTasks
+    );
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showRemoveModal, setShowRemoveModal] = useState(false);
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [selectedTask, setSelectedTask] = useState<Task>();
 
     useEffect(() => {
-        if (!tasks?.length)
-            localStorage.setItem(
-                'digital-hub-tasks',
-                JSON.stringify(randomTasks)
+        if (userId) {
+            const localStorageTasks: Record<string, Task[]> = JSON.parse(
+                localStorage.getItem('digital-hub-tasks') ?? '{}'
             );
+            if (!localStorageTasks[userId])
+                localStorage.setItem(
+                    'digital-hub-tasks',
+                    JSON.stringify({
+                        ...localStorageTasks,
+                        [userId]: randomTasks,
+                    })
+                );
+        }
+    }, [userId]);
+
+    if (!userId) return <ProgressSpinner />;
+
+    const onEdit = useCallback((task: Task) => {
+        setSelectedTask(task);
+        setShowEditModal(true);
     }, []);
 
-    const TaskActionBody = (data: Task) => {
-        return (
-            <Button
-                variant="ghost"
-                size="sm"
-                menu={[
-                    {
-                        label: 'Edit',
-                        icon: (
-                            <Pen
-                                size="1.5rem"
-                                className="text-secondary"
-                                weight="fill"
-                            />
-                        ),
-                        command: () => {
-                            setSelectedTask(data);
-                            setShowEditModal(true);
-                        },
-                    },
-                    {
-                        label: 'Remove',
-                        icon: (
-                            <Trash
-                                size="1.5rem"
-                                className="text-red-600"
-                                weight="fill"
-                            />
-                        ),
-                        command: () => {
-                            setSelectedTask(data);
-                            setShowRemoveModal(true);
-                        },
-                    },
-                ]}
-                menuProps={{
-                    pt: {
-                        root: { className: /*tw*/ 'max-w-40' },
-                    },
-                }}
-                iconOnly
-            >
-                <DotsThree size="1.5rem" weight="bold" />
-            </Button>
-        );
-    };
+    const onRemove = useCallback((task: Task) => {
+        setSelectedTask(task);
+        setShowRemoveModal(true);
+    }, []);
 
     const taskAddHandler = (task: Task) => {
-        setTasks((prevTasks) => [task, ...prevTasks]);
+        setTasks((prevTasks) =>
+            Array.isArray(prevTasks)
+                ? [task, ...prevTasks]
+                : {
+                      ...prevTasks,
+                      [userId]: [task, ...prevTasks[userId]],
+                  }
+        );
         setShowAddModal(false);
     };
 
     const taskEditHandler = (task: Task) => {
         setTasks((prevTasks) =>
-            prevTasks.map((prevTask) =>
-                prevTask.id === task.id ? task : prevTask
-            )
+            Array.isArray(prevTasks)
+                ? prevTasks.map((prevTask) =>
+                      prevTask.id === task.id ? task : prevTask
+                  )
+                : {
+                      ...prevTasks,
+                      [userId]: prevTasks[userId].map((prevTask) =>
+                          prevTask.id === task.id ? task : prevTask
+                      ),
+                  }
         );
         setShowEditModal(false);
     };
 
     const taskRemoveHandler = (task: Task) => {
-        setTasks((prevTasks) => prevTasks.filter(({ id }) => id !== task.id));
+        setTasks((prevTasks) =>
+            Array.isArray(prevTasks)
+                ? prevTasks.filter(({ id }) => id !== task.id)
+                : {
+                      ...prevTasks,
+                      [userId]: prevTasks[userId].filter(
+                          ({ id }) => id !== task.id
+                      ),
+                  }
+        );
         setShowRemoveModal(false);
     };
 
@@ -212,333 +120,31 @@ const Tasks = () => {
                     <DotsThreeVertical size="1.5rem" weight="bold" />
                 </Button>
             </div>
-            <div className="inline-block min-w-full overflow-hidden rounded-lg align-middle">
-                <DataTable
-                    value={tasks}
-                    paginator
-                    rows={8}
-                    tableClassName="min-w-full max-w-max"
-                    filterDisplay="row"
-                    emptyMessage="No tasks found."
-                >
-                    <Column
-                        field="name"
-                        header="Name"
-                        headerClassName="text-sm font-bold whitespace-nowrap"
-                        bodyClassName="text-secondary text-sm font-normal whitespace-nowrap"
-                        sortable
-                        filter
-                        filterElement={TaskNameFilter}
-                    />
-                    <Column
-                        field="description"
-                        header="Description"
-                        headerClassName="text-sm font-bold whitespace-nowrap"
-                        bodyClassName="text-secondary text-sm font-normal"
-                        sortable
-                        filter
-                        filterElement={TaskDescriptionFilter}
-                    />
-                    <Column
-                        field="status"
-                        header="Status"
-                        headerClassName="text-sm font-bold whitespace-nowrap"
-                        bodyClassName="text-secondary text-sm font-normal whitespace-nowrap"
-                        align="center"
-                        body={TaskStatusTag}
-                        sortable
-                        filter
-                        filterElement={TaskStatusFilter}
-                    />
-                    <Column
-                        header="Action"
-                        headerClassName="text-sm font-bold whitespace-nowrap"
-                        bodyClassName="text-secondary text-sm font-normal whitespace-nowrap"
-                        body={TaskActionBody}
-                    />
-                </DataTable>
-            </div>
+            <Table
+                tasks={Array.isArray(tasks) ? tasks : tasks[userId]}
+                onEdit={onEdit}
+                onRemove={onRemove}
+            />
             <Dialog
-                header={
-                    <h3 className="text-xl font-bold text-secondary">
-                        Add Task
-                    </h3>
-                }
-                closeIcon={<X size="1.5rem" />}
-                className="mx-6 max-w-xl flex-1 basis-96"
-                contentClassName="scrollbar-thin"
-                visible={showAddModal}
-                onHide={() => setShowAddModal(false)}
-                draggable={false}
-                resizable={false}
-                pt={{
-                    header: {
-                        className:
-                            /*tw*/ 'p-6 border-b border-solid border-[#d1d5db] gap-x-12',
-                    },
-                    closeButton: {
-                        className: /*tw*/ `${getBaseClassNames(false)} ${getSizeClassNames('sm', true)} ${getVariantClassNames('ghost')} w-auto h-auto`,
-                    },
-                    content: {
-                        className: /*tw*/ 'p-0',
-                    },
-                }}
-            >
-                <Formik
-                    initialValues={{
-                        id: uuidv4(),
-                        name: '',
-                        description: '',
-                        status: null,
-                    }}
-                    validationSchema={validationSchema}
-                    onSubmit={taskAddHandler}
-                >
-                    {({ values, handleChange, setFieldValue }) => (
-                        <Form>
-                            <div className="flex flex-col items-stretch justify-start gap-y-4 p-6">
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm">Name</label>
-                                    <InputText
-                                        className="w-full"
-                                        placeholder="Enter task name"
-                                        name="name"
-                                        values={values}
-                                        onChange={handleChange}
-                                    />
-                                    <ErrorMessage name="name" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm">
-                                        Description
-                                    </label>
-                                    <InputTextarea
-                                        className="w-full"
-                                        placeholder="Enter task description"
-                                        name="description"
-                                        values={values}
-                                        onChange={handleChange}
-                                    />
-                                    <ErrorMessage name="description" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm">Status</label>
-                                    <Dropdown
-                                        name="status"
-                                        value={values.status}
-                                        onChange={(e) =>
-                                            setFieldValue('status', e.value)
-                                        }
-                                        options={taskStatuses}
-                                        optionLabel="label"
-                                        optionValue="value"
-                                        placeholder="Choose task status"
-                                        pt={{
-                                            root: {
-                                                className:
-                                                    'hover:border-secondary focus:border-secondary focus:ring-2 focus:ring-secondary/40 shadow-none',
-                                            },
-                                            input: {
-                                                className:
-                                                    'py-1.5 px-2 text-sm text-secondary',
-                                            },
-                                            trigger: {
-                                                className:
-                                                    'text-secondary-light w-auto py-1.5 px-2',
-                                            },
-                                            item: {
-                                                className:
-                                                    'text-secondary aria-selected:bg-primary-light p-2',
-                                            },
-                                            list: {
-                                                className: 'py-2',
-                                            },
-                                        }}
-                                    />
-                                    <ErrorMessage name="status" />
-                                </div>
-                            </div>
-                            <div className="flex gap-x-6 border-t border-solid border-[#d1d5db] p-6">
-                                <Button
-                                    size="lg"
-                                    fullWidth
-                                    onClick={() => setShowAddModal(false)}
-                                    variant="outlined"
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" size="lg" fullWidth>
-                                    Add
-                                </Button>
-                            </div>
-                        </Form>
-                    )}
-                </Formik>
-            </Dialog>
+                type="add"
+                showModal={showAddModal}
+                setShowModal={setShowAddModal}
+                onSubmit={taskAddHandler}
+            />
             <Dialog
-                header={
-                    <h3 className="text-xl font-bold text-secondary">
-                        Edit Task
-                    </h3>
-                }
-                closeIcon={<X size="1.5rem" />}
-                className="mx-6 max-w-xl flex-1 basis-96"
-                contentClassName="scrollbar-thin"
-                visible={showEditModal && !!selectedTask}
-                onHide={() => setShowEditModal(false)}
-                draggable={false}
-                resizable={false}
-                pt={{
-                    header: {
-                        className:
-                            /*tw*/ 'p-6 border-b border-solid border-[#d1d5db] gap-x-12',
-                    },
-                    closeButton: {
-                        className: /*tw*/ `${getBaseClassNames(false)} ${getSizeClassNames('sm', true)} ${getVariantClassNames('ghost')} w-auto h-auto`,
-                    },
-                    content: {
-                        className: /*tw*/ 'p-0',
-                    },
-                }}
-            >
-                <Formik
-                    initialValues={selectedTask!}
-                    validationSchema={validationSchema}
-                    onSubmit={taskEditHandler}
-                >
-                    {({ values, handleChange, setFieldValue }) => (
-                        <Form>
-                            <div className="flex flex-col items-stretch justify-start gap-y-4 p-6">
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm">Name</label>
-                                    <InputText
-                                        className="w-full"
-                                        placeholder="Enter task name"
-                                        name="name"
-                                        values={values}
-                                        onChange={handleChange}
-                                    />
-                                    <ErrorMessage name="name" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm">
-                                        Description
-                                    </label>
-                                    <InputTextarea
-                                        className="w-full"
-                                        placeholder="Enter task description"
-                                        name="description"
-                                        values={values}
-                                        onChange={handleChange}
-                                    />
-                                    <ErrorMessage name="description" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm">Status</label>
-                                    <Dropdown
-                                        name="status"
-                                        value={values.status}
-                                        onChange={(e) =>
-                                            setFieldValue('status', e.value)
-                                        }
-                                        options={taskStatuses}
-                                        optionLabel="label"
-                                        optionValue="value"
-                                        placeholder="Choose task status"
-                                        pt={{
-                                            root: {
-                                                className:
-                                                    'hover:border-secondary focus:border-secondary focus:ring-2 focus:ring-secondary/40 shadow-none',
-                                            },
-                                            input: {
-                                                className:
-                                                    'py-1.5 px-2 text-sm text-secondary',
-                                            },
-                                            trigger: {
-                                                className:
-                                                    'text-secondary-light w-auto py-1.5 px-2',
-                                            },
-                                            item: {
-                                                className:
-                                                    'text-secondary aria-selected:bg-primary-light p-2',
-                                            },
-                                            list: {
-                                                className: 'py-2',
-                                            },
-                                        }}
-                                    />
-                                    <ErrorMessage name="status" />
-                                </div>
-                            </div>
-                            <div className="flex gap-x-6 border-t border-solid border-[#d1d5db] p-6">
-                                <Button
-                                    size="lg"
-                                    fullWidth
-                                    onClick={() => setShowEditModal(false)}
-                                    variant="outlined"
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" size="lg" fullWidth>
-                                    Update
-                                </Button>
-                            </div>
-                        </Form>
-                    )}
-                </Formik>
-            </Dialog>
+                type="edit"
+                task={selectedTask}
+                showModal={showEditModal}
+                setShowModal={setShowEditModal}
+                onSubmit={taskEditHandler}
+            />
             <Dialog
-                header={
-                    <h3 className="text-xl font-bold text-secondary">
-                        Remove Task
-                    </h3>
-                }
-                closeIcon={<X size="1.5rem" />}
-                className="mx-6 max-w-xl flex-1 basis-96"
-                visible={showRemoveModal && !!selectedTask}
-                onHide={() => setShowRemoveModal(false)}
-                draggable={false}
-                resizable={false}
-                pt={{
-                    header: {
-                        className:
-                            /*tw*/ 'p-6 border-b border-solid border-[#d1d5db] gap-x-12',
-                    },
-                    closeButton: {
-                        className: /*tw*/ `${getBaseClassNames(false)} ${getSizeClassNames('sm', true)} ${getVariantClassNames('ghost')} w-auto h-auto`,
-                    },
-                    content: {
-                        className: /*tw*/ 'p-0',
-                    },
-                }}
-            >
-                <p className="p-6">
-                    Are you sure you want to remove{' '}
-                    <span className="font-semibold">
-                        "{selectedTask?.name}"
-                    </span>{' '}
-                    task?
-                </p>
-                <div className="flex gap-x-6 border-t border-solid border-[#d1d5db] p-6">
-                    <Button
-                        size="lg"
-                        fullWidth
-                        onClick={() => setShowRemoveModal(false)}
-                        variant="outlined"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={() => taskRemoveHandler(selectedTask!)}
-                        variant="ghost"
-                        className="bg-red-500 hover:bg-red-600 hover:text-white focus:ring-2 focus:ring-red-600/50"
-                        size="lg"
-                        fullWidth
-                    >
-                        Remove
-                    </Button>
-                </div>
-            </Dialog>
+                type="remove"
+                task={selectedTask}
+                showModal={showRemoveModal}
+                setShowModal={setShowRemoveModal}
+                onSubmit={taskRemoveHandler}
+            />
         </MainLayout>
     );
 };

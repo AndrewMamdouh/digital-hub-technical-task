@@ -1,7 +1,7 @@
 import { UserButton } from '@clerk/clerk-react';
 import { ReactNode } from 'react';
 
-type MainProps = {
+export type MainProps = {
     children: ReactNode;
 };
 
